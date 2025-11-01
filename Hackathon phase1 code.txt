@@ -1,0 +1,115 @@
+#Backend Code
+const express = require("express");
+ const app = express(); app.get("/", (req, res) => {
+res.send("Social Media Feed Aggregator Backend Running!");
+});
+app.listen(5000, () => console.log("Server running on port 5000"));
+
+#Frontend Code (React)
+import React from "react"; function App() {
+  return <h2>Welcome to Social Media Feed Aggregator</h2>;
+}
+export default App;
+
+#Database Connection
+const mongoose = require("mongoose"); mongoose.connect("mongodb://127.0.0.1:27017/socialfeed")
+  then(() => console.log("MongoDB Connected"))
+  catch(err => console.log(err));
+
+#Install Commands
+npm init -y
+npm install express mongoose dotenv nodemon
+
+Request / response examples GET /api/feeds?limit=20
+
+{
+"items": [
+{
+"_id": "...",
+"title": "Post title", "content": "...",
+"source": "rss://example.com", "sourceType": "rss",
+"publishedAt": "2025-10-22T10:00:00Z",
+"url": "https://..."
+    }
+  ]
+}
+
+#Database schema (MongoDB with Mongoose)
+// models/Source.js
+const mongoose = require('mongoose');
+const SourceSchema = new mongoose.Schema({ title: String,
+type: { type: String, enum: ['rss','twitter','instagram','custom'], default: 'rss' }, url: String,
+config: Object, // store api keys or params createdAt: { type: Date, default: Date.now }
+});
+module.exports = mongoose.model('Source', SourceSchema);
+
+// models/FeedItem.js
+const FeedItemSchema = new mongoose.Schema({
+sourceId: { type: mongoose.Schema.Types.ObjectId, ref: 'Source' }, sourceName: String,
+sourceType: String, title: String, content: String,
+ 
+url: String, author: String,
+externalId: String, // id from original source for dedupe publishedAt: Date,
+aggregatedAt: { type: Date, default: Date.now }
+});
+module.exports = mongoose.model('FeedItem', FeedItemSchema);
+
+#Express server
+// server/index.js require('dotenv').config();
+const express = require('express'); const mongoose = require('mongoose'); const cors = require('cors');
+
+const Source = require('./models/Source'); const FeedItem = require('./models/FeedItem');
+
+const app = express(); app.use(cors()); app.use(express.json());
+
+#mongoose.connect(process.env.MONGODB_URI);
+
+// Add source
+app.post('/api/sources', async (req, res) => { const s = new Source(req.body);
+await s.save(); res.status(201).json(s);
+});
+
+// Get feeds — simple aggregation sorted by publishedAt desc app.get('/api/feeds', async (req, res) => {
+const limit = parseInt(req.query.limit) || 20; const items = await FeedItem.find()
+.sort({ publishedAt: -1 })
+.limit(limit)
+.exec(); res.json({ items });
+ 
+});
+
+const port = process.env.PORT || 4000;
+app.listen(port, () => console.log('Server running on', port)); Aggregation worker (RSS example)
+// worker/aggregator.js
+const cron = require('node-cron'); const axios = require('axios');
+const Parser = require('rss-parser'); const parser = new Parser();
+const Source = require('../models/Source'); const FeedItem = require('../models/FeedItem');
+
+// Run every 2 minutes (for hackathon demo) — adjust for production cron.schedule('*/2 * * * *', async () => {
+const sources = await Source.find({}); for (const s of sources) {
+try {
+if (s.type === 'rss') {
+const feed = await parser.parseURL(s.url); for (const entry of feed.items.slice(0, 10)) {
+const externalId = entry.guid || entry.link;
+const exists = await FeedItem.findOne({ externalId }); if (exists) continue;
+const item = new FeedItem({ sourceId: s._id, sourceName: s.title || s.url, sourceType: 'rss',
+title: entry.title,
+content: entry.contentSnippet || entry.content || '', url: entry.link,
+externalId,
+publishedAt: entry.isoDate ? new Date(entry.isoDate) : new Date()
+});
+await item.save();
+}
+}
+// add other source types (twitter, instagram) similarly
+} catch (err) {
+console.error('source fetch error', s.url, err.message);
+}
+}
+});
+
+
+
+
+
+
+
