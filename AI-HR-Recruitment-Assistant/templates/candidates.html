@@ -1,0 +1,6 @@
+<!DOCTYPE html><html><head><title>Candidates</title></head>
+<body><div class="container"><h1>Candidate Ranking</h1>
+<table><tr><th>Name</th><th>Email</th><th>Skills</th><th>Experience</th><th>Score</th><th>Status</th></tr>
+{% for c in candidates %}<tr><td>{{ c[1] }}</td><td>{{ c[2] }}</td><td>{{ c[4] }}</td>
+<td>{{ c[5] }}</td><td>{{ c[6] }}</td><td>{{ c[7] }}</td></tr>{% endfor %}
+</table><br><a href="/">Back to Home</a></div></body></html>

@@ -1,0 +1,7 @@
+body{font-family:Arial,sans-serif;background:#f4f6f8;margin:0;padding:30px}
+.container{max-width:1000px;margin:auto;background:white;padding:30px;border-radius:10px}
+section{margin:25px 0;padding:20px;border:1px solid #ddd;border-radius:8px}
+input,textarea{width:90%;padding:10px;margin:8px 0}textarea{height:120px}
+button{padding:10px 20px;cursor:pointer}pre{white-space:pre-wrap;line-height:1.6}
+table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:10px}
+.card{display:inline-block;padding:20px;margin:10px;border:1px solid #ddd;border-radius:8px}
